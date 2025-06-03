@@ -1,0 +1,115 @@
+<html>
+     <body>
+     {# Affichage du logo et des coordonnées de la paroisse #}
+    {% if options.afficheentete == 1%}
+         {% if app.user.entiteactive.logo %}
+            <img src="{{ dir_absolute_public }}/images/{{ asset(app.user.entiteactive.logo|default) }}" >
+        {% endif %}
+
+        <span style="font-size:11px; line-height:0.5em"> <p> <strong> {{ entite.nom }} </strong> <br /> </p>
+        <p> {{ entite.adresse.numerorue }} {{ entite.adresse.rue }} {{ entite.adresse.complementAdresse }} {{ entite.adresse.cp }} {{ entite.adresse.ville }} <br /> </p>
+        <p> {{ entite.adresse.numeroTelPrincipal }} - {{ entite.mailContact }} - {{ entite.siteWeb }}  <br /> </p> </span>
+    {% endif %}
+         
+        {# Affichage du titre demandé par l'utilisateur ou "célébrations " & date d édition de cette liste #}
+		{%set  titrechoisi=''%}
+		
+        {% if  titre!='Fiche de messe' %}
+			{%set  titrechoisi=titre %}
+        {% else %}
+			{%set  titrechoisi='' %}
+                {% if messes %}
+                {% for messe in messes %}
+                    {% if loop.first %} {%set  titrechoisi='  du  ' ~ messe.dateheure|format_datetime('none','none',pattern='EEEE dd MMMM') %}{% endif %}
+                    {% if loop.last %} {%set  titrechoisi=titrechoisi~' '~'au  '~ messe.dateheure|format_datetime('none','none',pattern='EEEE dd MMMM')%}{% endif %}
+                {% endfor %}
+                {% endif %}
+            {%set titrechoisi='Célébrations ' ~ titrechoisi %}
+                {% if celebrant %}- {{ celebrant.personne.nomComplet }} {% endif %}
+	            
+        {% endif %}
+		
+		<span style="font-size: 12px; text-align:right;"><i>Planning généré le {{ "now"|date("d/m/Y") }}</i></span>
+		<h2>
+			{{titrechoisi}}
+		</h2>
+     
+     
+     {% set lieux =[]  %}
+	 {% set DatesMesses =[]  %}
+     {% set lieu="" %}
+     {% set VarDate ="" %}
+      
+    {#création  du tableau des lieux pour les messes sélectionnées#}
+    {% for messe in messes %} 
+        {% if messe.reservationEglise.salle not in lieux %} {% set lieux=lieux|merge([messe.reservationEglise.salle]) %} {% endif %}
+    {% endfor %}
+
+	{#création des du tableau des dates pour les messes sélectionnées#}
+	{% for messe1 in messes %}
+         {% set VarDate=messe1.dateheure|format_datetime('none','none',pattern='EEEE')|capitalize|upper ~' '~ messe1.dateheure|format_datetime('none','none',pattern='dd MMMM')|capitalize|upper %}
+		{%if VarDate not in DatesMesses %} {% set DatesMesses=DatesMesses|merge([VarDate]) %}{% endif %}
+	{% endfor %}
+    
+      {#% for la_date in DatesMesses %} 
+        <span style="font-size:10px"> {{ la_date|format_datetime('none','none',pattern='EEEE')|capitalize|upper }} </span> 
+                                <span style="font-size:10px"> {{ la_date|format_datetime('none','none',pattern='dd MMMM')|capitalize|upper }} </span> <br />
+    {% endfor %#}
+																																											
+    <table>
+		<thead>
+			<tr>
+				<th>Paroisse Bonne-Nouvelle</th>
+
+				{% for la_date in DatesMesses %} 
+					<th style="width: 10%;"> 
+                                <span style="font-size:10px"> {{la_date }}
+                                    
+                                 {#   {{ la_date|format_datetime('none','none',pattern='EEEE')|capitalize|upper }} </span> <br />
+                                <span style="font-size:10px"> {{ la_date|format_datetime('none','none',pattern='dd MMMM')|capitalize|upper }} </span> <br />
+                                    #}
+					</th>
+				{% endfor %}
+			</tr>
+		</thead>
+        
+            {% for lieu in lieux %}
+                <tr>
+                <td>{{lieu}}</td>
+                    {% for la_date in DatesMesses %}
+                    <td>
+                        {% for messe in messes %} 
+                            {% if messe.reservationEglise.salle==lieu and messe.dateheure|format_datetime('none','none',pattern='EEEE')|capitalize|upper ~' '~ messe.dateheure|format_datetime('none','none',pattern='dd MMMM')|capitalize|upper==la_date %}
+                            {#% if messe.reservationEglise.salle==lieu and messe.dateheure|date('Y-m-d')==la_date|date('Y-m-d') %#}
+                                 <span style="font-size:11px; line-height:0.5em">{{messe.dateheure|date('H')}}h{{messe.dateheure|date('i')}}</span><br>
+                                {% if options.affichagecelebrants == 1%}
+									{% for cel in messe.celebrants %}
+										{% if loop.index == 1 %}
+													<strong>{{cel.personne.prenom}}{{' '}}{{ cel.personne.nom|first|upper }}</strong>
+										{% endif %}
+                                    {% else %} Non désigné
+									{% endfor %}
+								{% endif %}
+                                {% if options.affichageinformations == 1%}
+                                    <br>{{messe.informations}}<br>
+                                    {#{messe.typeCelebration}#}
+                                {% endif %}
+                            {% endif %}
+                         
+                        {# ne sert à rien car on en parcours pas les sacrement. IL faut rechercher sur le célébrant !#}
+                        {% for sacrement in sacrements %} 
+                                {% if sacrement.lieuReservation.salle.lieu==lieu and sacrement.dateprevue|format_datetime('none','none',pattern='EEEE')|capitalize|upper ~' '~ sacrement.dateprevue|format_datetime('none','none',pattern='dd MMMM')|capitalize|upper==la_date %}
+                                     {{'sacrement'}}
+                                     {{sacrement.dateprevue|date('H-i')}}<br>
+                                     {{ sacrement.celebrant.prenom }}
+                                {% endif %}
+                        {% endfor %}
+                       
+                    {% endfor %}{# endfor DatesMesses #}
+            {% endfor %} {# endfor messes #}
+                    </td>
+                    
+        </tr>
+            {% endfor %} {# endfor lieux #}
+    </table>
+    </body>
