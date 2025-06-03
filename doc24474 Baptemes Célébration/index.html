@@ -1,0 +1,52 @@
+<html><body>
+    
+ 
+   <img src="{{ dir_absolute_public }}/images/{{ asset(app.user.entiteactive.logo|default) }}" >
+    
+    
+    <h4>Doc 24474</h4>
+    <h5>Personnes </h5>
+     {% for personne in personnes %}
+    {{personne.id }}  {{personne.prenom }} {{personne.nom }} <br>
+    {% else %}aucune personne{% endfor %}
+    
+    <h5>Messes</h5>
+     {% for messe in messes %}
+    {{messe.id }}  {{messe.reservationEglise.salle}}  {{messe.dateheure|date('Y-m-d')}} intentions: {{messe.intentions|length}}<br>
+    {% else %}aucune messe{% endfor %}
+    
+    <h5>Célébrants </h5>
+     {% for celebrant in celebrants %}
+    {{celebrant.id }} {{celebrant.personne.id }}  {{celebrant.personne.prenom }} {{celebrant.personne.nom }}<br>
+    {% else %}aucun célébrant{% endfor %}
+    
+    <h5>Sacrements </h5>
+     {% for sacrement in sacrements %}
+    {{sacrement.id }} {{sacrement.type }} <br>
+    {% else %}aucun sacrement{% endfor %}
+    
+     <h5>Lieux </h5>
+     {% for lieu in lieux %}
+    {{lieu.id }}  <br>
+    {% else %}aucun lieu{% endfor %}
+    
+    <h5>Intentions</h5>
+     {% for intention in intentions %}
+    {{intention.id }}  <br>
+    {% else %}aucune intention{% endfor %}
+    
+    <h5>Inscription</h5>
+    {% for inscription  in inscriptions %}
+    {{inscription.id}} <br>
+    {% else %}aucune inscription{% endfor %}
+    
+    
+    
+    
+    
+
+
+</body>
+</html>
+		
+	
