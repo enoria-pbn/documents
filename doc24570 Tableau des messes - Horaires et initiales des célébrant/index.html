@@ -1,0 +1,143 @@
+{# Modèle pour affichage des tableau des messes avec lieu horaire et initiale célébrant
+Critères de selection :
+- Selectionner les messes pour l'affichage
+- Les lieux listés sont tous les lieux de célébration sur la paroisse sans disctinction.
+Format : 
+- PDF A4 Paysage
+
+La seconde est identique à la première avec les informations sur les celebrants en moins
+
+Contact modèle : responsable.si@poitiers-catholique.fr
+#}
+{#
+<p style="text-align:left;">
+    {% if app.user.entiteactive.logo %}
+       <img src="{{ dir_absolute_public }}/images/{{ asset(groupe.entite.logo|default('Entité Anonyme'))}}" width="100px"/>
+    {% endif %}
+</p>#}
+
+<p style="text-align:right;">
+	<span style="font-size: 12px;">Célébrations
+	{% if messes %}
+	{% for messe in messes %}
+        {% if loop.first %}du {{messe.dateheure|format_datetime('none','none',pattern='EEEE dd MMMM')}}{% endif %}
+        {% if loop.last %}au {{messe.dateheure|format_datetime('none','none',pattern='EEEE dd MMMM')}}{% endif %}
+	{% endfor %}
+	{% endif %}</i></span>
+	{% if celebrant %}- {{ celebrant.personne.nomComplet }} {% endif %}
+	<br>
+	<span style="font-size: 12px;"><i>Planning généré le {{ "now"|date("d/m/Y") }}</span>
+</p>
+
+
+{% set salles = app.user.entiteactive.salles %}
+{% if lieux %} {% set salles = lieux %} {% endif %}
+<table>
+	<thead>
+	<tr>
+		<th>
+			{% if app.user.entiteactive.logo %}
+				<img style="display: block;" src="{{ dir_absolute_public }}/images/{{ asset(app.user.entiteactive.logo) }}" width="40"/>
+			{% endif %}
+		</th>
+		{% for salle in salles %}
+		{% if salle.isCelebration == 'T' %}
+			<th>	
+				<span style="font-size:9px;">{{ salle.nom }}</span>
+			</th>
+		{% endif %}
+		{% endfor %}
+		{% if options.affichagecommentaires == 1%}
+		<th style="width:150px;">
+			<span style="font-size:9px;">Commentaires</span>
+		</th>
+		{% endif %}
+	</tr>
+	</thead>
+	<tbody>
+	{% if messes %}
+	{% set datejour = null %}
+	{% set jour = null %}
+	{% set commentaires = "" %}
+	{# {% if not lieux and not celebrant %} #}
+		{% for messe in messes %}
+			{% if datejour != messe.dateheure|date('d-m-Y') %}
+			{% set datejour = messe.dateheure|date('d-m-Y') %}
+			{% set commentaires = "" %}
+			{% if messe.dateheure|format_datetime('none','none',pattern='EEEE') == "dimanche" %}
+				{% if messe.informationsLiturgiques.couleur is defined and messe.informationsLiturgiques.ligne1 is defined %}
+				<tr class="{% if options.couleursliturgiques == 1 %}{{ messe.informationsLiturgiques.couleur }}{% else %}gris{% endif %}">
+				{% else %}
+				<tr style="background : rgb(145, 206, 133)">
+				{% endif %}
+			{% else %}
+			<tr>
+			{% endif %}
+				<td style="text-align : center; line-height : 1.0 rem">
+					<span style="font-size : 9px; font-weight:bold; line-height : 1.0em;">
+						{{ messe.dateheure|format_datetime('none','none',pattern='EEEE')|capitalize }} <br> {{ messe.dateheure|format_datetime('none','none',pattern='dd MMMM')}} <br>
+					</span>
+				</td>
+				{# on parcours les salles pour cherhcer les messes correspondantes #}
+			
+				{% for salle in salles %}
+					{% if salle.isCelebration == 'T' %}
+					<td style="text-align : center; font-size : 10px;">	
+						{% for messe2 in messes %}
+							{% if messe2.dateheure|date('d-m-Y') == datejour and messe2.reservationEglise.salle.id == salle.id %}		
+									{# Heure messe #}
+									{{ messe2.dateheure|date('H:i') }}
+									{# Les commentaires dans une variable pour la fin de ligne#}
+									{% if messe2.informations != "" %}
+										{% set commentaires = commentaires ~ "\n" ~ messe2.reservationEglise.salle.nom ~ "|n : " ~ messe2.informations ~ "<br>" %}
+										{# Pour Niort #}
+									{% endif %}
+									{# Initiale celebrant #}
+									{% if messe2.typeCelebration == "Célébration de la Parole" %}
+										<br><i>AP</i>
+									{% else %}
+										{% if options.affichagecelebrants == 1%}
+											{% for cel in messe2.celebrants %}
+												{% if loop.index == 1 %}
+													<br>({{ cel.personne.prenom|first|upper }}{{ cel.personne.nom|first|upper }})
+												{% endif %}
+											{% endfor %}
+										{% endif %}
+									{% endif %}
+									
+							{% endif %}
+						{% endfor %}
+					</td>
+					{% endif %}
+				{% endfor %}
+				{% if options.affichagecommentaires == 1%}
+					<td style="font-size : 9px; text-align : left;">
+					{% if commentaires != "" %}
+						{{ commentaires | nl2br }}
+					{% endif %}
+				{% endif %}
+			</td>
+			</tr>
+			{% endif %}	
+		{% endfor %}
+	{# {% endif %} #}
+	</tbody>
+{% else %}
+	Aucune messe n'a été trouvée
+{% endif %}
+</table>
+
+<br>
+<table style="border:0px; font-size: 10px; font-weight: bold; width: 100%; text-align : center;">
+<tr style="border:0px;">
+	<td style="border:0px;">[J] : Messe animée par les jeunes musciens</td>
+	<td style="border:0px;">[MdF] : Messe des familles</td>
+	<td style="border:0px;">[AP] : Assemblée de prière (liturgie de la Parole)</td>
+	<td style="border:0px;">[JA] : Messe animée par les étudiants et jeunes professionnels (Jeunes Adultes)</td>
+</tr>
+</table>
+<div id="footer" style="margin:auto; font-size : 9px; text-align:center;">
+	{{ app.user.entiteactive.nom }} - {{ app.user.entiteactive.adresse.complementAdresse }} {{ app.user.entiteactive.adresse.numeroRue }} {{ app.user.entiteactive.adresse.rue }}, {{ app.user.entiteactive.adresse.cp }} {{ app.user.entiteactive.adresse.ville }}
+	<br>
+	Tel : {{ app.user.entiteactive.adresse.numeroTelPrincipal }}
+</div>
