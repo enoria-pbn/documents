@@ -1,0 +1,64 @@
+<html>
+     <body>
+     {# Affichage du logo et des coordonnées de la paroisse xx #}
+   
+         
+         
+        {# Affichage du titre demandé par l'utilisateur ou "célébrations " & date d édition de cette liste #}
+		{%set  titrechoisi=''%}
+		
+        {% if  titre!='Fiche de messe' %}
+			{%set  titrechoisi=titre %}
+        {% else %}
+			{%set  titrechoisi='' %}
+                
+                {% for messe in messes %}
+                    {% if loop.first %} {%set  titrechoisi='  du  ' ~ messe.dateheure|format_datetime('none','none',pattern='EEEE dd MMMM') %}{% endif %}
+                    {% if loop.last %} {%set  titrechoisi=titrechoisi~' '~'au  '~ messe.dateheure|format_datetime('none','none',pattern='EEEE dd MMMM')%}{% endif %}
+                {% endfor %}
+                
+            {%set titrechoisi='Célébrations ' ~ titrechoisi %}
+               
+	            
+        {% endif %}
+		
+		
+		<h2>
+			Doc: 24617 {{titrechoisi}}
+		</h2>
+         
+         {% set leslieux=[] %}
+         {% set lesdates=[] %}
+       
+    {% for messe in messes %} 
+     {% if messe.reservationEglise.salle not in leslieux %} {% set leslieux=leslieux|merge([messe.reservationEglise.salle]) %} {% endif %}
+     {% if messe.dateheure|date('d/m/y') not in lesdates %} {% set lesdates=lesdates|merge([messe.dateheure|date('d/m/y')]) %} {% endif %}
+    {% endfor %}
+            
+         <table>
+         <tr>
+             <td>PBN</td>
+             {% for ladate in lesdates %}<td> {{ladate}}</td>{% endfor %}
+         </tr>
+         {% for lelieu in leslieux %}
+          <tr>
+           <td> {{ lelieu }}</td>
+           {% for ladate in lesdates %}
+        <td>
+         {% for messe in messes %} 
+        {% if lelieu==messe.reservationEglise.salle and ladate==messe.dateheure|date('d/m/y') %}
+             {{messe.dateheure|date('d/m/y    H:i')}}<br>
+             {% for cel in messe.celebrants %}{{cel.personne.prenom}}{% endfor %}
+         {% endif %}
+         {% endfor %}
+              </td>
+         {% endfor %}
+            
+          </tr>
+         {% endfor %}
+         </table>
+
+     
+     
+     
+     
